@@ -85,3 +85,11 @@ bastion_IP = 34.77.245.202
 someinternalhost_IP = 10.132.0.3
 ```
 
+
+# HW6. Основные сервисы Google Cloud Platform (GCP).
+
+Параметры для автоматической проверки HW через Travis CI
+``` text
+testapp_IP = 34.77.57.229
+testapp_port = 9292
+```
