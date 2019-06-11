@@ -85,3 +85,46 @@ bastion_IP = 34.77.245.202
 someinternalhost_IP = 10.132.0.3
 ```
 
+
+# HW6. Основные сервисы Google Cloud Platform (GCP).
+
+Параметры для автоматической проверки HW через Travis CI
+``` text
+testapp_IP = 34.77.57.229
+testapp_port = 9292
+```
+
+Быстрый запуск готового инстанса с сервисом PUMA из express42/reddit
+с использованием [startup script](https://cloud.google.com/compute/docs/startupscript):
+``` bash
+gcloud compute instances create reddit-app-autofile \
+  --boot-disk-size=10GB \
+  --image-family ubuntu-1604-lts \
+  --image-project=ubuntu-os-cloud \
+  --machine-type=g1-small \
+  --tags puma-server \
+  --metadata-from-file startup-script=puma-go.sh \
+  --restart-on-failure
+```
+
+Использование URL на github вместо локального файла
+``` bash
+gcloud compute instances create reddit-app-autourl \
+  --boot-disk-size=10GB \
+  --image-family ubuntu-1604-lts \
+  --image-project=ubuntu-os-cloud \
+  --machine-type=g1-small \
+  --tags puma-server \
+  --metadata=startup-script-url=https://raw.githubusercontent.com/otus-devops-2019-02/nwton_infra/cloud-testapp/puma-go.sh \
+  --restart-on-failure
+```
+
+Создание правила фаервола для работы приложения PUMA
+``` bash
+gcloud compute firewall-rules create default-puma-server-auto \
+  --direction=INGRESS --priority=1000 \
+  --network=default --action=ALLOW \
+  --rules=tcp:9292 \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=puma-server
+```
