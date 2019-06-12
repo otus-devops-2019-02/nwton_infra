@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 # startup script for GCP to deploy PUMA service
 # use with startup-script options in gcloud

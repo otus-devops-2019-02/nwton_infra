@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 # Install ruby
 apt-get update
