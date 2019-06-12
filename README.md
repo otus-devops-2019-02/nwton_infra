@@ -178,3 +178,24 @@ $ gcloud compute instances create reddit-app-packer \
 - в Travis CI используется версия 1.2.4, в которой нет опции timeouts
 - в версии 1.4.1 нужно использовать timeouts, иначе билд обрывается,
   т.к. скрипты сборки выполняются очень долго из-за apt update
+
+Примечание:
+- tags применяет метки только при сборке образа, при запуске ВМ
+  нужно добавлять тэги через gcloud
+- https://www.packer.io/docs/builders/googlecompute.html
+- https://cloud.google.com/vpc/docs/add-remove-network-tags
+
+Быстрый запуск из самого последнего образа в семействе,
+с дефолтными параметрами ВМ, запечеными в образ :
+``` bash
+$ gcloud compute instances create reddit-app-pack-base \
+  --image-family reddit-base \
+  --tags puma-server \
+  --preemptible \
+  --metadata-from-file startup-script=config-scripts/deploy.sh
+
+$ gcloud compute instances create reddit-app-pack-full \
+  --image-family reddit-full \
+  --tags puma-server \
+  --preemptible
+```
