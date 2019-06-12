@@ -128,3 +128,6 @@ gcloud compute firewall-rules create default-puma-server-auto \
   --source-ranges=0.0.0.0/0 \
   --target-tags=puma-server
 ```
+
+
+# HW7. Модели управления инфраструктурой.
