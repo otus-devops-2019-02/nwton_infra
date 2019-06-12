@@ -97,7 +97,7 @@ testapp_port = 9292
 Быстрый запуск готового инстанса с сервисом PUMA из express42/reddit
 с использованием [startup script](https://cloud.google.com/compute/docs/startupscript):
 ``` bash
-gcloud compute instances create reddit-app-autofile \
+$ gcloud compute instances create reddit-app-autofile \
   --boot-disk-size=10GB \
   --image-family ubuntu-1604-lts \
   --image-project=ubuntu-os-cloud \
@@ -109,7 +109,7 @@ gcloud compute instances create reddit-app-autofile \
 
 Использование URL на github вместо локального файла
 ``` bash
-gcloud compute instances create reddit-app-autourl \
+$ gcloud compute instances create reddit-app-autourl \
   --boot-disk-size=10GB \
   --image-family ubuntu-1604-lts \
   --image-project=ubuntu-os-cloud \
@@ -121,7 +121,7 @@ gcloud compute instances create reddit-app-autourl \
 
 Создание правила фаервола для работы приложения PUMA
 ``` bash
-gcloud compute firewall-rules create default-puma-server-auto \
+$ gcloud compute firewall-rules create default-puma-server-auto \
   --direction=INGRESS --priority=1000 \
   --network=default --action=ALLOW \
   --rules=tcp:9292 \
@@ -131,3 +131,45 @@ gcloud compute firewall-rules create default-puma-server-auto \
 
 
 # HW7. Модели управления инфраструктурой.
+
+Примечание: в JSON для packer нельзя в массивах заканчивать список элементов
+запятой, после последнего элемента запятая должна обязательно отсутствовать,
+иначе packer validate ругается.
+Пути внутри JSON отсчитываются относительно текущего рабочего каталога.
+
+Полезные опции set для скриптов деплоя на bash (сразу после shebang)
+``` text
+-e вызывает немедленный выход из скрипта, если выходное состояние команды не нулевое
+-u выводит сообщение об ошибке и завершает скрипт, при попытке использования не инициализированной переменной
+-v выводит в стандартный поток ошибок (stderr) выполняемые команды/программы
+```
+
+Прочие опции: help set и https://habr.com/ru/post/221273/
+
+Создаём образ с ruby и mongo, а приложение деплоим через startup-script,
+для постоянной работы ВМ надо заменить preemptible на restart-on-failure
+
+При этом для сборки образа можно использовать example файл и
+переопределить некоторые переменные в командной строке, если прочие
+дефолтные значения нас устраивают.
+``` bash
+$ cd packer && packer build \
+    -var-file=variables.json \
+    ubuntu16.json
+
+$ cd packer && packer build \
+    -var-file=variables.json.example \
+    -var 'my_project_id=infra-243222' \
+    ubuntu16.json
+
+==> Builds finished. The artifacts of successful builds are:
+--> googlecompute: A disk image was created: reddit-base-1560357455
+
+$ gcloud compute instances create reddit-app-packer \
+  --boot-disk-size=10GB \
+  --image=reddit-base-1560357455 \
+  --machine-type=g1-small \
+  --tags puma-server \
+  --preemptible \
+  --metadata-from-file startup-script=config-scripts/deploy.sh
+```
