@@ -173,3 +173,8 @@ $ gcloud compute instances create reddit-app-packer \
   --preemptible \
   --metadata-from-file startup-script=config-scripts/deploy.sh
 ```
+
+Примечание по packer:
+- в Travis CI используется версия 1.2.4, в которой нет опции timeouts
+- в версии 1.4.1 нужно использовать timeouts, иначе билд обрывается,
+  т.к. скрипты сборки выполняются очень долго из-за apt update
