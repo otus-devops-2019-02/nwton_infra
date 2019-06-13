@@ -199,3 +199,30 @@ $ gcloud compute instances create reddit-app-pack-full \
   --tags puma-server \
   --preemptible
 ```
+
+
+# HW8. Практика Infrastructure as a Code (IaC).
+
+Примечание: в штатных образах Ubuntu уже установлен git,
+дополнительно устанавливать не нужно.
+
+Если штатная версия не устраивает (например, нужно использовать
+дополнительно includeif.gitdir или что-то подобное), то можно
+обновиться до последнего стабильного релиза:
+``` text
+sudo add-apt-repository ppa:git-core/ppa
+sudo apt-get update
+sudo apt-cache policy git
+sudo apt-get install git
+```
+
+## Примечания по terraform
+terraform fmt - использует табуляцию в 2 пробела
+
+Неоходимо проверять, какие переменные возвращаются, со временем
+всё меняется:
+- app_assigned_nat - как указано в ДЗ, но такой переменной сейчас нет
+- app_external_ip - сейчас содержит внешний IP адрес инстанса
+
+На уровне google_compute_instance для connection можно указать
+файл приватного ключа только БЕЗ passphrase, что грустно.
