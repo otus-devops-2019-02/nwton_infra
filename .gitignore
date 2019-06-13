@@ -1,0 +1,5 @@
+# Default use:
+# core.excludesfile=~/work/gitignore_global
+
+# For private in packer
+packer/variables.json

@@ -1,4 +1,8 @@
 #!/bin/bash
+set -eu
+
+# Install git
+sudo apt-get install -y git
 
 # Install at home folder
 cd ~

@@ -1,0 +1,11 @@
+{
+    "my_project_id": "infra-***",
+    "my_source_image_family": "ubuntu-1604-lts",
+    "my_image_description": "Base for puma-reddit",
+    "my_disk_size": "10",
+    "my_disk_type": "pd-standard",
+    "my_zone": "europe-west1-b",
+    "my_network": "default",
+    "my_net_tags": "external-net",
+    "my_machine_type": "f1-micro"
+}
