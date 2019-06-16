@@ -343,3 +343,9 @@ terraform apply -var 'apps_count=2'
 
 
 # HW9. Принципы организации инфраструктурного кода и работа над инфраструктурой в команде на примере Terraform.
+
+``` bash
+cd packer
+packer build -var-file=variables.json app.json
+packer build -var-file=variables.json db.json
+```
