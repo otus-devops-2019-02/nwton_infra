@@ -44,7 +44,8 @@ EOF
 }
 
 resource "google_compute_instance" "app" {
-  name         = "reddit-app-tf"
+  count        = "${var.apps_count}"
+  name         = "reddit-app-tf-${count.index}"
   machine_type = "g1-small"
   zone         = "${var.zone}"
 
