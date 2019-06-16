@@ -32,6 +32,17 @@ resource "google_compute_firewall" "firewall_puma" {
   target_tags = ["reddit-app"]
 }
 
+resource "google_compute_project_metadata_item" "prj-ssh-keys" {
+  key = "ssh-keys"
+
+  value = <<EOF
+appuser-project:${file("${var.public_key_path}")}
+appuser1:${file(var.public_key_path)}
+appuser2:${file(var.public_key_path)}
+appuser3:${file(var.public_key_path)}
+EOF
+}
+
 resource "google_compute_instance" "app" {
   name         = "reddit-app-tf"
   machine_type = "g1-small"
