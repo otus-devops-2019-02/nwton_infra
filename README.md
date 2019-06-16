@@ -340,3 +340,6 @@ terraform apply -var 'apps_count=2'
 - https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html
 - https://www.terraform.io/docs/providers/google/r/compute_health_check.html
 - https://www.terraform.io/docs/providers/google/r/compute_target_pool.html
+
+
+# HW9. Принципы организации инфраструктурного кода и работа над инфраструктурой в команде на примере Terraform.

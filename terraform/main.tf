@@ -32,6 +32,22 @@ resource "google_compute_firewall" "firewall_puma" {
   target_tags = ["reddit-app"]
 }
 
+resource "google_compute_firewall" "firewall_ssh" {
+  name = "default-allow-ssh"
+
+  description = "Allow SSH from anywhere"
+  priority    = 65534
+
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+
 resource "google_compute_project_metadata_item" "prj-ssh-keys" {
   key = "ssh-keys"
 
@@ -41,6 +57,10 @@ appuser1:${file(var.public_key_path)}
 appuser2:${file(var.public_key_path)}
 appuser3:${file(var.public_key_path)}
 EOF
+}
+
+resource "google_compute_address" "app_ip" {
+  name = "reddit-app-ip"
 }
 
 resource "google_compute_instance" "app" {
@@ -68,8 +88,10 @@ resource "google_compute_instance" "app" {
     # сеть, к которой присоединить данный интерфейс
     network = "default"
 
-    # использовать ephemeral IP для доступа из Интернет
-    access_config {}
+    # использовать statical IP для доступа из Интернет
+    access_config = {
+      nat_ip = "${google_compute_address.app_ip.address}"
+    }
   }
 
   connection {
