@@ -3,3 +3,10 @@
 
 # For private in packer
 packer/variables.json
+
+# For terraform temp files
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfvars
+.terraform/
