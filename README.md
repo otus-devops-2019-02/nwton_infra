@@ -340,3 +340,108 @@ terraform apply -var 'apps_count=2'
 - https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html
 - https://www.terraform.io/docs/providers/google/r/compute_health_check.html
 - https://www.terraform.io/docs/providers/google/r/compute_target_pool.html
+
+
+# HW9. Принципы организации инфраструктурного кода и работа над инфраструктурой в команде на примере Terraform.
+
+``` bash
+cd packer
+packer build -var-file=variables.json app.json
+packer build -var-file=variables.json db.json
+```
+
+При добавлении в main.tf дополнительного модуля при запуске
+terraform validate предлается запускать terraform init,
+но это неверно, нужно использовать terraform get.
+
+При переносе ресурсов в модули - будет происходить удаление
+старых ресурсов и создание новых с другим именем.
+
+При подключении модуля указывается, какие переменные из основной
+конфигурации следует передать ему (можно оставить то же самое
+имя переменных, а можно и изменить, но это разные переменные).
+
+Сейчас prod и stage окружения в terraform пересекаются, нельзя
+использовать их оба одновременно. При этом дополнительным
+введением переменной environment со значением имени окружения
+в качестве суффикса имён ресурсов проблему не решить.
+Например, созданием ещё одного правила доступа к SSH со всех
+IP адресов для staging окружения мы одновременно откроем и
+для product окружения. Необходимо делать отдельные ресурсы
+сети для разных окружений и навешивать тэги правильно.
+
+## Запуск полностью с нуля
+
+Запуск чистом каталоге (с импортом части ресурсов из GCP и
+пересозданием других, если что-то пошло не так):
+``` text
+rm -rf .terraform/
+rm terraform.tfstate
+
+terraform get
+terraform init
+terraform refresh
+terraform plan
+
+terraform import module.vpc.google_compute_firewall.firewall_ssh default-allow-ssh
+terraform import module.app.google_compute_firewall.firewall_puma allow-puma-default
+terraform import module.db.google_compute_firewall.firewall_mongo allow-mongo-default
+terraform import module.app.google_compute_address.app_ip reddit-app-ip
+
+terraform taint module.db.google_compute_instance.db
+terraform taint module.app.google_compute_instance.app
+
+terraform apply
+```
+
+## Переход на remote backend
+
+При переходе с файла на remote backend - данные из
+terraform.tfstate перегружаются в удалённое хранилище и
+больше локально не требуются
+- https://www.terraform.io/docs/backends/types/gcs.html
+``` text
+$ terraform plan
+Backend reinitialization required. Please run "terraform init".
+Reason: Initial configuration of the requested backend "gcs"
+...
+
+$ terraform init
+Initializing the backend...
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to the
+  newly configured "gcs" backend. An existing non-empty state already exists in
+  the new backend. The two states have been saved to temporary files that will be
+  removed after responding to this query.
+```
+
+
+Одновременный запуск нескольких terraform блокируется
+с сообщением об ошибке и наличием state lock.
+``` text
+Terraform acquires a state lock to protect the state from being written
+by multiple users at the same time. Please resolve the issue above and try
+again. For most commands, you can disable locking with the "-lock=false"
+flag, but this is not recommended.
+```
+
+## Запуск рабочего места с нуля и remote backend
+
+При использовании переменных при описании backend
+сталкиваемся с проблемой начальной инициализации
+рабочего каталога с нуля
+- https://github.com/hashicorp/terraform/issues/13022
+``` text
+  backend "gcs" {
+    bucket  = "tf-state-${var.project}"
+    prefix  = "${var.apps_env}"
+  }
+```
+
+И можно инициализировать примерно так, тогда будет создан
+файл .terraform/terraform.tfstate и всё будет ок:
+``` text
+terraform init \
+     -backend-config "bucket=tf-state-infra-12345" \
+     -backend-config "prefix=prod"
+```

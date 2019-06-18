@@ -1,0 +1,6 @@
+terraform {
+  backend "gcs" {
+    bucket  = "nwton-tf-state-infra"
+    prefix  = "stage"
+  }
+}
