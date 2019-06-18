@@ -1,6 +1,6 @@
 resource "google_compute_instance" "app" {
   count        = "${var.apps_count}"
-  name         = "reddit-app-tf-${count.index}"
+  name         = "reddit-${var.apps_env}-app-${count.index+1}"
   machine_type = "g1-small"
   zone         = "${var.zone}"
 

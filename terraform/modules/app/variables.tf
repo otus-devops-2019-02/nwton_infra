@@ -11,6 +11,11 @@ variable app_disk_image {
   default     = "reddit-app-base"
 }
 
+variable apps_env {
+  description = "Environment"
+  default     = "stage"
+}
+
 variable apps_count {
   description = "How many instances run"
   default     = "1"

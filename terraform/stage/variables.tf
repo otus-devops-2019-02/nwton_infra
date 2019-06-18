@@ -15,6 +15,11 @@ variable zone {
   default     = "europe-west1-b"
 }
 
+variable apps_env {
+  description = "Environment"
+  default     = "stage"
+}
+
 variable apps_count {
   description = "How many instances run"
   default     = "1"
