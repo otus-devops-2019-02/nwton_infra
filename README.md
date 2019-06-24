@@ -552,7 +552,25 @@ ansible-playbook clone.yml -i ./my_inv.sh
 
 # HW11. Продолжение знакомства с Ansible: templates, handlers, dynamic inventory, vault, tags.
 
+В конфиге ansible установлена опция dynamic inventory на базе json
+из вывода terrform из предыдущего ДЗ, поэтому перед выполнением
+команд ansible из ДЗ просто собираем стенд (и разбираем потом):
+``` text
+cd terraform/stage && terraform apply
+cd ../../ansible && ./my_tf2dyn.sh
+...
+cd terraform/stage && terraform destroy
+```
 
+Примечание: добавление новых output переменных в terraform
+требует дополнительного прогона plan + apply.
+
+Деплой из одного плейбука по хостам и тэгам
+``` text
+ansible-playbook reddit_app.yml --limit db
+ansible-playbook reddit_app.yml --limit app --tags app-tag
+ansible-playbook reddit_app.yml --limit app --tags deploy-tag
+```
 
 # HW12. Принципы организации кода для управления конфигурацией.
 
