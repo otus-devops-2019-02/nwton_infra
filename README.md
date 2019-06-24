@@ -445,3 +445,117 @@ terraform init \
      -backend-config "bucket=tf-state-infra-12345" \
      -backend-config "prefix=prod"
 ```
+
+
+# HW10. Управление конфигурацией.
+
+Примечание для WSL и не только: надо внимательно смотреть
+на warnings в ansible, иногда там находится полезная информация.
+После чего быстро фиксим одним из трёх вариантов:
+``` text
+$ ansible-config dump --only-changed
+[WARNING] Ansible is being run in a world writable directory
+(/home/...), ignoring it as an ansible.cfg source.
+
+$ chmod 755 .
+$ export ANSIBLE_CONFIG=./ansible.cfg
+$ ln -s /mnt/c/..._infra/ansible/ansible.cfg ~/.ansible.cfg
+```
+
+Полный фикс WSL:
+- https://docs.ansible.com/ansible/devel/reference_appendices/config.html#cfg-in-world-writable-dir
+- https://devblogs.microsoft.com/commandline/chmod-chown-wsl-improvements/
+- https://docs.microsoft.com/en-us/windows/wsl/wsl-config
+- https://github.com/ansible/ansible/issues/42388
+
+## Основное задание
+Запуск (git clone ...) через модуль shell - не является идемпотентным.
+При повторном запуске - ломается из-за уже существующего каталога.
+
+Результат выполнения модуля git в ansible (через playbook или вручную) - идемпотентный.
+При повторном запуске ничего не ломается.
+
+При запуске через playbook выводится краткая информация
+по хостам, где проходил запуск ansible и результат что
+были проведены изменения отображается в поле *changed*
+(при запуске модуля git - выдается json, отображаемый разным
+цветом в зависимости от наличия изменений)
+
+
+Запуск приложения:
+``` text
+cd terraform/stage && terraform apply
+cd -
+cd ansible
+vi inventory
+
+ansible app -m git -a 'repo=https://github.com/express42/reddit.git dest=/home/appuser/reddit'
+
+или
+
+ansible-playbook clone.yml
+```
+
+## Дополнительное задание
+Преобразуем обычный yaml в статический json
+``` text
+sudo apt install jq
+sudo -H pip install yq
+
+cd ansible && cat inventory.yml | yq . > inventory_static.json
+```
+
+Документация по dynamic inventory
+- https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html
+- https://docs.ansible.com/ansible/devel/plugins/inventory.html
+- https://docs.ansible.com/ansible/devel/plugins/inventory/script.html
+- https://medium.com/@Nklya/динамическое-инвентори-в-ansible-9ee880d540d6
+
+Основные отличия dynamic inventory json от обычного
+преобразованного из yaml:
+- В группе хостов содержатся ТОЛЬКО hostnames/IP addresses.
+  Вложенные группы не поддерживаются. И поэтому нельзя обращаться
+  к каждому серверу по отдельности (а если не нужны vars, то можно сбросить
+  уровень hosts и сразу передать в группу список).
+- Необходимо наличие секции meta и/или поддержка в скрипте
+  опции --host для передачи дополнительных параметров для
+  хостов (отсутствует в обычном static).
+  В моём скрипте при запросе опций для любого хоста отдаётся
+  пустой JSON список, иначе - содержимое JSON.
+
+Для добавления поддержки dynamic inventory необходимо установить в ansible.cfg
+для опции enable_plugins значение script (или добавить несколько значений),
+по умолчанию в некоторых поставках ansible это уже включено.
+И после этого заменить опцию inventory с файла на скрипт, или же указывать
+в качестве опции при запуске ansible.
+
+Добавлены скрипты:
+- ansible/my_tf2dyn.sh - получаем IP для app и db из terraform и вставляем в
+  простейший шаблон JSON (ожидаем получить только один IP для каждой группы,
+  если будет несколько IP в каждой группе или ни одного - будет создан
+  неправильный JSON) и сохраняем как inventory.json
+- ansible/my_inv.sh - отображаем inventory.json для опции --list или
+  пустой список для опции --host
+- оба скрипта можно объединить в один и обойтись без промежуточного файла
+
+
+Запуск приложения:
+``` text
+cd terraform/stage && terraform apply
+cd -
+cd ansible
+./my_tf2dyn.sh
+ansible all -m ping -i ./my_inv.sh
+ansible-playbook clone.yml -i ./my_inv.sh
+```
+
+
+# HW11. Продолжение знакомства с Ansible: templates, handlers, dynamic inventory, vault, tags.
+
+
+
+# HW12. Принципы организации кода для управления конфигурацией.
+
+
+
+# HW13. Локальная разработка Ansible ролей с Vagrant. Тестирование конфигурации.
