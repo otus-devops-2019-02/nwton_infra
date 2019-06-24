@@ -468,7 +468,7 @@ $ ln -s /mnt/c/..._infra/ansible/ansible.cfg ~/.ansible.cfg
 - https://docs.microsoft.com/en-us/windows/wsl/wsl-config
 - https://github.com/ansible/ansible/issues/42388
 
-
+## Основное задание
 Запуск (git clone ...) через модуль shell - не является идемпотентным.
 При повторном запуске - ломается из-за уже существующего каталога.
 
@@ -494,6 +494,59 @@ ansible app -m git -a 'repo=https://github.com/express42/reddit.git dest=/home/a
 или
 
 ansible-playbook clone.yml
+```
+
+## Дополнительное задание
+Преобразуем обычный yaml в статический json
+``` text
+sudo apt install jq
+sudo -H pip install yq
+
+cd ansible && cat inventory.yml | yq . > inventory_static.json
+```
+
+Документация по dynamic inventory
+- https://docs.ansible.com/ansible/latest/dev_guide/developing_inventory.html
+- https://docs.ansible.com/ansible/devel/plugins/inventory.html
+- https://docs.ansible.com/ansible/devel/plugins/inventory/script.html
+- https://medium.com/@Nklya/динамическое-инвентори-в-ansible-9ee880d540d6
+
+Основные отличия dynamic inventory json от обычного
+преобразованного из yaml:
+- В группе хостов содержатся ТОЛЬКО hostnames/IP addresses.
+  Вложенные группы не поддерживаются. И поэтому нельзя обращаться
+  к каждому серверу по отдельности (а если не нужны vars, то можно сбросить
+  уровень hosts и сразу передать в группу список).
+- Необходимо наличие секции meta и/или поддержка в скрипте
+  опции --host для передачи дополнительных параметров для
+  хостов (отсутствует в обычном static).
+  В моём скрипте при запросе опций для любого хоста отдаётся
+  пустой JSON список, иначе - содержимое JSON.
+
+Для добавления поддержки dynamic inventory необходимо установить в ansible.cfg
+для опции enable_plugins значение script (или добавить несколько значений),
+по умолчанию в некоторых поставках ansible это уже включено.
+И после этого заменить опцию inventory с файла на скрипт, или же указывать
+в качестве опции при запуске ansible.
+
+Добавлены скрипты:
+- ansible/my_tf2dyn.sh - получаем IP для app и db из terraform и вставляем в
+  простейший шаблон JSON (ожидаем получить только один IP для каждой группы,
+  если будет несколько IP в каждой группе или ни одного - будет создан
+  неправильный JSON) и сохраняем как inventory.json
+- ansible/my_inv.sh - отображаем inventory.json для опции --list или
+  пустой список для опции --host
+- оба скрипта можно объединить в один и обойтись без промежуточного файла
+
+
+Запуск приложения:
+``` text
+cd terraform/stage && terraform apply
+cd -
+cd ansible
+./my_tf2dyn.sh
+ansible all -m ping -i ./my_inv.sh
+ansible-playbook clone.yml -i ./my_inv.sh
 ```
 
 
