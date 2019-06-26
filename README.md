@@ -579,6 +579,46 @@ ansible-playbook reddit_app_multiple_plays.yml --tags app-tag
 ansible-playbook reddit_app_multiple_plays.yml --tags deploy-tag
 ```
 
+## Дополнительное задание
+
+### Использование скрипта gce.py
+
+Документация:
+- https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+- https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html
+- https://docs.ansible.com/ansible/2.5/scenario_guides/guide_gce.html
+
+Использование *gce.py* является очень устаревшим вариантом и ограниченным
+по возможностями из-за JSON (как рассматривалось в предыдущем ДЗ), для инстансов
+передаётся только IP адрес и группировка только по тэгам.
+Цитата: _All of the created instances in GCE are grouped by tag.
+Since this is a cloud, it’s probably best to ignore hostnames and
+just focus on group management._
+
+Настройка усложнена, необходимо иметь много лишних файлов.
+
+### Использование плагина gcp_compute
+
+Документация:
+- https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+- https://docs.ansible.com/ansible/latest/plugins/inventory.html
+- https://docs.ansible.com/ansible/latest/scenario_guides/guide_gce.html
+- https://docs.ansible.com/ansible/latest/plugins/inventory/gcp_compute.html
+- http://matthieure.me/2018/12/31/ansible_inventory_plugin.html
+
+Стильно, модно, молодёжно. Рекомендуется в свежей документации.
+
+Просто и логично настраивается:
+- получаем json service account key
+- добавляем библиотеки через pip
+- создаём inventory.yml файл, где описываем служебные параметры
+  (проект, регион, путь к ключу) и параметры навешивания
+  групп/тэгов для инстансов исходя из их региона и hostname.
+- позволяет создавать ресурсы GCP в ansible tasks
+
+Дополнительно можно миксовать статический и динамический
+inventory (сложить несколько файлов в каталог и указывать его)
+
 
 # HW12. Принципы организации кода для управления конфигурацией.
 
