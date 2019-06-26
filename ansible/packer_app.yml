@@ -1,0 +1,17 @@
+---
+- name: Install Ruby and other stuff
+  hosts: all
+  become: true
+
+  tasks:
+  - name: update apt cache
+    apt:
+      update_cache: true
+      force_apt_get: true
+
+  - name: Install ruby and required packages in loop
+    apt: "name={{ item }} state=present force_apt_get=true"
+    with_items:
+      - ruby-full
+      - ruby-bundler
+      - build-essential

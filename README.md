@@ -565,6 +565,8 @@ cd terraform/stage && terraform destroy
 Примечание: добавление новых output переменных в terraform
 требует дополнительного прогона plan + apply.
 
+## Основное задание
+
 Деплой из одного плейбука с одним сценарием по хостам и тэгам
 ``` text
 ansible-playbook reddit_app_one_play.yml --limit db
@@ -618,6 +620,48 @@ just focus on group management._
 
 Дополнительно можно миксовать статический и динамический
 inventory (сложить несколько файлов в каталог и указывать его)
+
+## Основное задание по provision в packer
+
+Документация
+- https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
+- https://docs.ansible.com/ansible/latest/modules/apt_module.html
+- https://docs.ansible.com/ansible/latest/user_guide/playbooks_loops.html
+
+В последних версиях ansible очень сильно рекомендуют использовать
+список для apt вместо цикла (в документации и в консоли) для повышения
+производительности.
+``` text
+When used with a loop: each package will be processed individually,
+it is much more efficient to pass the list directly to the name option.
+
+[DEPRECATION WARNING]: Invoking "apt" only once while using a loop via
+squash_actions is deprecated. Instead of using a loop to supply multiple items
+and specifying `name: "{{ item }}"`, please use `name: ['ruby-full', 'ruby-
+bundler', 'build-essential']` and remove the loop. This feature will be removed
+ in version 2.11. Deprecation warnings can be disabled by setting
+deprecation_warnings=False in ansible.cfg.
+
+changed: [default] => (item=[u'ruby-full', u'ruby-bundler', u'build-essential'])
+```
+
+Собираем образы, создаем окружение, генерим dynamic inventory,
+указываем внутренний IP базы данных в playbook ansible,
+затем деплоим:
+``` bash
+packer build -var-file=packer/variables.json packer/app.json
+packer build -var-file=packer/variables.json packer/db.json
+
+cd terraform/stage && terraform apply
+cd ../../ansible &&
+./my_tf2dyn.sh
+vi app.yml
+ansible-playbook site.yml
+```
+
+Примечание: для успешной сборки необходимо активное правило
+по доступу через SSH, которое в нашем окружении постоянно
+добавляется и удаляется через terraform.
 
 
 # HW12. Принципы организации кода для управления конфигурацией.
