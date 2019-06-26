@@ -567,16 +567,16 @@ cd terraform/stage && terraform destroy
 
 Деплой из одного плейбука с одним сценарием по хостам и тэгам
 ``` text
-ansible-playbook reddit_app.yml --limit db
-ansible-playbook reddit_app.yml --limit app --tags app-tag
-ansible-playbook reddit_app.yml --limit app --tags deploy-tag
+ansible-playbook reddit_app_one_play.yml --limit db
+ansible-playbook reddit_app_one_play.yml --limit app --tags app-tag
+ansible-playbook reddit_app_one_play.yml --limit app --tags deploy-tag
 ```
 
 Деплой из одного плейбука с разными сценариями по тэгам
 ``` text
-ansible-playbook reddit_app2.yml --tags db-tag
-ansible-playbook reddit_app2.yml --tags app-tag
-ansible-playbook reddit_app2.yml --tags deploy-tag
+ansible-playbook reddit_app_multiple_plays.yml --tags db-tag
+ansible-playbook reddit_app_multiple_plays.yml --tags app-tag
+ansible-playbook reddit_app_multiple_plays.yml --tags deploy-tag
 ```
 
 
