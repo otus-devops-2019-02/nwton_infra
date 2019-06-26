@@ -10,3 +10,6 @@ packer/variables.json
 *.tfstate.backup
 *.tfvars
 .terraform/
+
+# For ansible temp files
+*.retry

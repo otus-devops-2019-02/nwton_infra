@@ -552,6 +552,116 @@ ansible-playbook clone.yml -i ./my_inv.sh
 
 # HW11. Продолжение знакомства с Ansible: templates, handlers, dynamic inventory, vault, tags.
 
+В конфиге ansible установлена опция dynamic inventory на базе json
+из вывода terrform из предыдущего ДЗ, поэтому перед выполнением
+команд ansible из ДЗ просто собираем стенд (и разбираем потом):
+``` text
+cd terraform/stage && terraform apply
+cd ../../ansible && ./my_tf2dyn.sh
+...
+cd terraform/stage && terraform destroy
+```
+
+Примечание: добавление новых output переменных в terraform
+требует дополнительного прогона plan + apply.
+
+## Основное задание
+
+Деплой из одного плейбука с одним сценарием по хостам и тэгам
+``` text
+ansible-playbook reddit_app_one_play.yml --limit db
+ansible-playbook reddit_app_one_play.yml --limit app --tags app-tag
+ansible-playbook reddit_app_one_play.yml --limit app --tags deploy-tag
+```
+
+Деплой из одного плейбука с разными сценариями по тэгам
+``` text
+ansible-playbook reddit_app_multiple_plays.yml --tags db-tag
+ansible-playbook reddit_app_multiple_plays.yml --tags app-tag
+ansible-playbook reddit_app_multiple_plays.yml --tags deploy-tag
+```
+
+## Дополнительное задание
+
+### Использование скрипта gce.py
+
+Документация:
+- https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+- https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.html
+- https://docs.ansible.com/ansible/2.5/scenario_guides/guide_gce.html
+
+Использование *gce.py* является очень устаревшим вариантом и ограниченным
+по возможностями из-за JSON (как рассматривалось в предыдущем ДЗ), для инстансов
+передаётся только IP адрес и группировка только по тэгам.
+Цитата: _All of the created instances in GCE are grouped by tag.
+Since this is a cloud, it’s probably best to ignore hostnames and
+just focus on group management._
+
+Настройка усложнена, необходимо иметь много лишних файлов.
+
+### Использование плагина gcp_compute
+
+Документация:
+- https://cloud.google.com/iam/docs/creating-managing-service-account-keys
+- https://docs.ansible.com/ansible/latest/plugins/inventory.html
+- https://docs.ansible.com/ansible/latest/scenario_guides/guide_gce.html
+- https://docs.ansible.com/ansible/latest/plugins/inventory/gcp_compute.html
+- http://matthieure.me/2018/12/31/ansible_inventory_plugin.html
+
+Стильно, модно, молодёжно. Рекомендуется в свежей документации.
+
+Просто и логично настраивается:
+- получаем json service account key
+- добавляем библиотеки через pip
+- создаём inventory.yml файл, где описываем служебные параметры
+  (проект, регион, путь к ключу) и параметры навешивания
+  групп/тэгов для инстансов исходя из их региона и hostname.
+- позволяет создавать ресурсы GCP в ansible tasks
+
+Дополнительно можно миксовать статический и динамический
+inventory (сложить несколько файлов в каталог и указывать его)
+
+## Основное задание по provision в packer
+
+Документация
+- https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
+- https://docs.ansible.com/ansible/latest/modules/apt_module.html
+- https://docs.ansible.com/ansible/latest/user_guide/playbooks_loops.html
+
+В последних версиях ansible очень сильно рекомендуют использовать
+список для apt вместо цикла (в документации и в консоли) для повышения
+производительности.
+``` text
+When used with a loop: each package will be processed individually,
+it is much more efficient to pass the list directly to the name option.
+
+[DEPRECATION WARNING]: Invoking "apt" only once while using a loop via
+squash_actions is deprecated. Instead of using a loop to supply multiple items
+and specifying `name: "{{ item }}"`, please use `name: ['ruby-full', 'ruby-
+bundler', 'build-essential']` and remove the loop. This feature will be removed
+ in version 2.11. Deprecation warnings can be disabled by setting
+deprecation_warnings=False in ansible.cfg.
+
+changed: [default] => (item=[u'ruby-full', u'ruby-bundler', u'build-essential'])
+```
+
+Собираем образы, создаем окружение, генерим dynamic inventory,
+указываем внутренний IP базы данных в playbook ansible,
+затем деплоим:
+``` bash
+packer build -var-file=packer/variables.json packer/app.json
+packer build -var-file=packer/variables.json packer/db.json
+
+cd terraform/stage && terraform apply
+cd ../../ansible &&
+./my_tf2dyn.sh
+vi app.yml
+ansible-playbook site.yml
+```
+
+Примечание: для успешной сборки необходимо активное правило
+по доступу через SSH, которое в нашем окружении постоянно
+добавляется и удаляется через terraform.
 
 
 # HW12. Принципы организации кода для управления конфигурацией.
