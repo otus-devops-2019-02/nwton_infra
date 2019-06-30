@@ -1,5 +1,5 @@
 resource "google_compute_instance" "db" {
-  name = "reddit-${var.apps_env}-db"
+  name = "reddit-db-${var.apps_env}"
 
   machine_type = "g1-small"
 

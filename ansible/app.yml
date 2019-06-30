@@ -3,9 +3,12 @@
   hosts: app
   become: true
   vars:
-    db_host: 10.132.15.198
+    db_host: "{{ hostvars[groups['db'][0]]['networkInterfaces'][0]['networkIP'] }}"
 
   tasks:
+    - name: Show IP address
+      debug:
+        msg: "Internal IP for connect to MongoDB: {{db_host}}"
     - name: Add unit file for Puma
       copy:
         src: files/puma.service
