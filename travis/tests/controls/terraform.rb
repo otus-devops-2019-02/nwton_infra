@@ -6,7 +6,7 @@ control 'terraform' do
   impact 1
   title 'Run terraform validate for stage & prod'
 
-  environments = ['/', 'stage/', 'prod/']
+  environments = ['stage/', 'prod/']
 
   environments.each do |fname|
     describe file("terraform/#{fname}/terraform.tfvars.example") do
@@ -14,7 +14,7 @@ control 'terraform' do
       its('content') { should match(%r{\n\Z}) }
     end
 
-    describe command('cd terraform/#{fname} && terraform init -backend=false && terraform validate -var-file=terraform.tfvars.example') do
+    describe command("cd terraform/#{fname} && terraform init -backend=false && terraform validate -var-file=terraform.tfvars.example") do
       its('stdout') { should match "Terraform has been successfully initialized!" }
       its('stderr') { should eq '' }
       its('exit_status') { should eq 0 }

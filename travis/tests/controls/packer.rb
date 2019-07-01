@@ -17,11 +17,11 @@ control 'packer' do
     end
   end
 
-  files = command('find packer -name "*.json" -type f').stdout.split("\n")
+  files = command('find packer -maxdepth 1 -name "*.json" -type f').stdout.split("\n")
 
   files.each do |fname|
     describe command("packer validate -var-file=packer/variables.json.example #{fname}") do
-      its('stdout') { should eq '' }
+      its('stdout') { should eq "Template validated successfully.\n" }
       its('stderr') { should eq '' }
       its('exit_status') { should eq 0 }
     end
