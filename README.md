@@ -611,15 +611,68 @@ just focus on group management._
 Стильно, модно, молодёжно. Рекомендуется в свежей документации.
 
 Просто и логично настраивается:
-- получаем json service account key
-- добавляем библиотеки через pip
-- создаём inventory.yml файл, где описываем служебные параметры
+- получаем json service account key (и назначаем роль Наблюдателя)
+  * https://console.developers.google.com/iam-admin/serviceaccounts
+- добавляем библиотеки через pip (если ещё не установлены)
+- создаём inventory.gcp.yml файл, где описываем служебные параметры
   (проект, регион, путь к ключу) и параметры навешивания
   групп/тэгов для инстансов исходя из их региона и hostname.
 - позволяет создавать ресурсы GCP в ansible tasks
 
 Дополнительно можно миксовать статический и динамический
 inventory (сложить несколько файлов в каталог и указывать его)
+
+Распределение хостов по группам - как на основе hostname, так и
+через тэги, навешенные через terraform (аналогично можно будет
+группировать и с использованием другой информации)
+``` text
+$ ansible-inventory --list -i inventory.gcp.yml
+
+$ tail inventory.gcp.yml
+keyed_groups:
+  - prefix: tag
+    separator: '-'
+    key: tags['items']
+groups:
+  named_app: "'reddit-app-' in name"
+  named_db: "'reddit-db-' in name"
+  tagged_app: "'reddit-app' in tags['items']"
+  tagged_db: "'reddit-db' in tags['items']"
+```
+
+Чтобы работало быстро, а не обращалось в GCP на каждый
+запуск - обязательно необходимо включить кэширование в
+настройках ansible (по-умолчанию 3600 секунд).
+
+Теперь создание инфраструктуры и выкатывание приложения
+упрощается и избавляется от ручной работы по копированию
+IP адреса из вывода terraform в файл inventory:
+``` bash
+packer build -var-file=packer/variables.json packer/app.json
+packer build -var-file=packer/variables.json packer/db.json
+
+cd terraform/stage && terraform apply
+cd ../../ansible && ansible-playbook site.yml
+```
+
+### Альтернативные методы без обращения к GCP
+
+Ссылки:
+- https://alex.dzyoba.com/blog/terraform-ansible/
+- https://otus.ru/nest/post/118/
+- https://github.com/express42/terraform-ansible-example
+- https://github.com/adammck/terraform-inventory
+- https://github.com/radekg/terraform-provisioner-ansible
+
+Два разных подхода:
+- Генерирование inventory из файла состояния terraform
+  (аналогично тому, что было реализовано в дополнительном
+  задании из предыдущего ДЗ на скриптах, но выше уровнем)
+- Плагин для terraform для запуска provisioners
+  (больше подходит для первичных опраций с хостами при
+  развертывания окружения, но не постоянных операций с
+  хостами, например, обновления или бэкапа)
+
 
 ## Основное задание по provision в packer
 
