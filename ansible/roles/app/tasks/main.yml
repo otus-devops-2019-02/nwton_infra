@@ -6,7 +6,7 @@
 
 - name: Show IP address
   debug:
-    msg: "Internal IP for connect to MongoDB: {{db_host}}"
+    msg: "Internal IP for connect to MongoDB: {{ db_host }}"
 
 - name: Add unit file for Puma
   copy:
