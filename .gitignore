@@ -13,3 +13,6 @@ packer/variables.json
 
 # For ansible temp files
 *.retry
+
+# skip roles from ansible-galaxy
+ansible/roles/jdauphant.nginx
