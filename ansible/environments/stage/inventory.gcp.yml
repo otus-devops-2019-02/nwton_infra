@@ -18,5 +18,5 @@ keyed_groups:
     separator: '-'
     key: tags['items']
 groups:
-  app: "'reddit-app' in tags['items']"
-  db: "'reddit-db' in tags['items']"
+  app: "'reddit-app' in tags['items'] and '-stage' in name"
+  db: "'reddit-db' in tags['items'] and '-stage' in name"

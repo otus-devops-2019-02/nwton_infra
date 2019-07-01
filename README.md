@@ -719,6 +719,37 @@ ansible-playbook site.yml
 
 # HW12. Принципы организации кода для управления конфигурацией.
 
+Проблема с одновременной работой с разными окружениями в одном
+проекте встаёт в полный рост: сейчас очень легко через terraform
+создать окружение prod, а IP адреса в ansible использовать как
+для окружения staging.
+При ручном копировании из вывода terraform в inventory - это
+случится рано или поздно. При использовании dynamic inventory
+в текущем варианте - нет чёткого определения хостов для
+каждого окружения.
+Варианты решения:
+- самое простое и правильное: *делить по разным проектам*
+- работать только с одним окружением и создавать его в начале работ и
+  делать destroy по окончании (получается что у смещается уровень и
+  вместо prod/staging используем staging/testing окружения)
+- использовать генерирование inventory из файла состояния
+  terraform и указывать правильное окружение
+- проверять наличие суффикса в hostname с именем окружения (prod
+  или staging), для этого необходимо писать условие.
+
+Пример разделения окружения, при этом в группы app и db попадают только
+те хосты, которые относятся к этому окружению (но нужно помнить, что в
+группу all попадут вообще все хосты, даже не относящиеся к этому окружению)
+``` text
+$ grep -r " in name" -- environments/
+environments/prod/inventory.gcp.yml:  app: "'reddit-app' in tags['items'] and '-prod' in name"
+environments/prod/inventory.gcp.yml:  db: "'reddit-db' in tags['items'] and '-prod' in name"
+environments/stage/inventory.gcp.yml:  app: "'reddit-app' in tags['items'] and '-stage' in name"
+environments/stage/inventory.gcp.yml:  db: "'reddit-db' in tags['items'] and '-stage' in name"
+
+$ ansible-inventory --list -i environments/stage/inventory.gcp.yml
+$ ansible-inventory --list -i environments/prod/inventory.gcp.yml
+```
 
 
 # HW13. Локальная разработка Ansible ролей с Vagrant. Тестирование конфигурации.
