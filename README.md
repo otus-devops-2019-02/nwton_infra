@@ -1,6 +1,9 @@
 # nwton_infra
 nwton Infra repository
 
+[![Build Status](https://travis-ci.com/otus-devops-2019-02/nwton_infra.svg?branch=master)](https://travis-ci.com/otus-devops-2019-02/nwton_infra)
+
+
 # HW4. Локальное окружение инженера. ChatOps и визуализация рабочих процессов.
   Командная работа с Git. Работа в GitHub.
 
@@ -719,6 +722,8 @@ ansible-playbook site.yml
 
 # HW12. Принципы организации кода для управления конфигурацией.
 
+## Дополнительное задание по dynamic inventory
+
 Проблема с одновременной работой с разными окружениями в одном
 проекте встаёт в полный рост: сейчас очень легко через terraform
 создать окружение prod, а IP адреса в ansible использовать как
@@ -750,6 +755,110 @@ environments/stage/inventory.gcp.yml:  db: "'reddit-db' in tags['items'] and '-s
 $ ansible-inventory --list -i environments/stage/inventory.gcp.yml
 $ ansible-inventory --list -i environments/prod/inventory.gcp.yml
 ```
+
+## Дополнительное задание по TravisCI
+
+Бейдж вставляем в начало README.md
+- https://docs.travis-ci.com/user/status-images/
+
+Установка и работа с ansible-lint локально
+``` text
+sudo pip install ansible-lint
+ansible-lint playbooks/site.yml --exclude=roles/jdauphant.nginx
+```
+
+Работа с TravisCI
+- https://medium.com/@Nklya/локальное-тестирование-в-travisci-2b5ef9adb16e
+- https://medium.com/@Nklya/новая-интеграция-travisci-с-github-или-travis-ci-org-vs-travis-ci-com-bc9833753461
+- https://github.com/sethmlarson/trytravis
+
+Простое добавление последовательности запуска скриптов с проверками не подходит:
+при любой ошибке тут же выполнение прерывается и дальнейшие проверки провести
+ну удаётся, в результате чего последовательно нужно будет исправлять каждую
+ошибку и ждать когда получим сообщение о следующей. Сбор кодов возврата каждой
+утилиты и вывод в конце, если хоть одно приложение упало - выглядит точно
+так же, как написание bash скриптов для деплоя вместо использования ansible.
+
+Поэтому был взят InSpec, который используется и при проверке ДЗ.
+При использовании собственного проекта - нужно будет добавить в скрипт
+создание docker инстанса (или использовать штатные средства Travis CI)
+
+Скрипты и документация по InSpec:
+- https://github.com/express42/otus-homeworks/tree/2019-02
+- https://raw.githubusercontent.com/express42/otus-homeworks/2019-02/run.sh
+- https://github.com/express42/otus-homeworks/blob/2019-02/homeworks/ansible-3/run.sh
+- https://www.inspec.io/tutorials/
+
+Из нюансов - нужно следить за кавычками (одинарными/двойными, проблема
+аналогичная использованию puppet), чтобы переменные внутри строки
+разворачивались в их значение как ожидается.
+
+
+## В процессе сделано:
+- Перевели плейбуки для app и db на использование ролей
+  созданных по шаблону по образу ansible galaxy
+  `ansible-galaxy init app` и `ansible-galaxy init db`
+- Создали окружения stage и prod с разными inventory и добавили
+  в вывод debug отображение окружения в запуск плейбуков
+- Почистили рабочий каталог от старых файлов и организовали
+  расположение файлов плейбуков согласно ansible best practies
+- Шаблоны packer поправлены на новые пути в ansible
+- Добавили окружение по-умолчанию и немного дополнительных
+  настроек в ansible.cfg
+- Добавили роль jdauphant.nginx из galaxy через requirements и
+  настроили проксирование до нашего приложения
+- Добавили в terraform правило фаервола для 80 порта
+- Теперь приложение доступно по HTTP порту 80
+  `https://github.com/jdauphant/ansible-role-nginx`
+- Добавили поддержку Ansible Vault и зашифрованные файлы
+  со списком пользователей и их паролями
+
+``` text
+ansible-vault encrypt environments/prod/credentials.yml
+ansible-vault encrypt environments/stage/credentials.yml
+
+ansible-vault edit environments/stage/credentials.yml
+
+ansible-vault decrypt environments/stage/credentials.yml
+```
+
+## Дополнительное задание
+- Настроил использование dynamic inventory для окружений stage и
+  prod с дополнительной проверкой по наличию суффикса в hostname.
+- Добавил тесты и линтеры на базе InSpec с запуском Travis CI
+
+## Как запустить проект:
+
+Полная сборка образов, установка зависимостей и раскатывание
+приложения в stage окружении с чисткой кэша:
+``` bash
+packer build -var-file=packer/variables.json packer/app.json
+packer build -var-file=packer/variables.json packer/db.json
+
+cd ansible && ansible-galaxy install -r environments/stage/requirements.yml
+cd ..
+
+rm /tmp/infra_inventory/gcp_compute_*
+cd terraform/stage && terraform apply -auto-approve=false
+cd ../../ansible && ansible-playbook playbooks/site.yml
+
+cd ../terraform/stage && terraform destroy
+```
+
+Раскатывание приложения в prod окружении:
+``` bash
+rm /tmp/infra_inventory/gcp_compute_*
+cd terraform/prod && terraform apply -auto-approve=false
+cd ../../ansible && ansible-playbook playbooks/site.yml -i environments/prod/inventory.gcp.yml
+
+cd ../terraform/prod && terraform destroy
+```
+
+## Как проверить работоспособность:
+- Перейти по ссылке http://app_external_ip где
+  app_external_ip взять из вывода terraform (или ansible)
+
+[![Build Status](https://travis-ci.com/otus-devops-2019-02/nwton_infra.svg?branch=ansible-3)](https://travis-ci.com/otus-devops-2019-02/nwton_infra)
 
 
 # HW13. Локальная разработка Ansible ролей с Vagrant. Тестирование конфигурации.
