@@ -19,3 +19,11 @@ ansible/roles/jdauphant.nginx
 
 # for safety work with Ansible Vault
 vault.key
+
+# Vagrant & molecule
+.vagrant/
+*.log
+*.pyc
+.molecule
+.cache
+.pytest_cache
