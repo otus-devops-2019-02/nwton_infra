@@ -1,5 +1,9 @@
 ---
 # tasks file for app
+- name: Show info about the env this host belongs to
+  debug:
+    msg: "This host is in {{ env }} environment!!!"
+
 - name: Show IP address
   debug:
     msg: "Internal IP for connect to MongoDB: {{db_host}}"
