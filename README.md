@@ -756,6 +756,17 @@ $ ansible-inventory --list -i environments/stage/inventory.gcp.yml
 $ ansible-inventory --list -i environments/prod/inventory.gcp.yml
 ```
 
+Дополнение: *более правильный способ - использовать labels*
+- https://cloud.google.com/blog/products/gcp/labelling-and-grouping-your-google-cloud-platform-resources
+- https://cloud.google.com/resource-manager/docs/creating-managing-labels
+
+И тогда достаточно добавить в inventory.gcp.yml фильтр вида:
+```
+filters:
+  - labels.env = stage
+```
+
+
 ## Дополнительное задание по TravisCI
 
 Бейдж вставляем в начало README.md
