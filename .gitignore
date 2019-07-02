@@ -27,3 +27,6 @@ vault.key
 .molecule
 .cache
 .pytest_cache
+
+# virtualenv
+ansible/venv/
