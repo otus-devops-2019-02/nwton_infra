@@ -30,6 +30,9 @@ Vagrant.configure("2") do |config|
       "app" => ["appserver"],
       "app:vars" => { "db_host" => "10.10.10.10"}
       }
+      ansible.extra_vars = {
+        "deploy_user" => "vagrant"
+      }
     end
   end
 end
