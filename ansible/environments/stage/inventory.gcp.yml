@@ -1,0 +1,22 @@
+plugin: gcp_compute
+auth_kind: serviceaccount
+service_account_file: ~/.ssh/gcp_infra_inventory.json
+zones:
+  - europe-west1-b
+projects:
+  - infra-243222
+
+filters: []
+
+### use hostnames only if we have DNS or SSH alias
+# hostnames:
+#   - name
+
+# generate groups for hosts like tag_reddit_app
+keyed_groups:
+  - prefix: tag
+    separator: '-'
+    key: tags['items']
+groups:
+  app: "'reddit-app' in tags['items'] and '-stage' in name"
+  db: "'reddit-db' in tags['items'] and '-stage' in name"
