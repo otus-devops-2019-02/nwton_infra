@@ -2,6 +2,13 @@
 
 HOMEWORK_RUN=./travis/tests/run.sh
 
+BRANCH=${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}
+
+if [ "$BRANCH" == "" ]; then
+  echo "We don't have tests for master branch"
+  exit 0
+fi
+
 if [ -f $HOMEWORK_RUN ]; then
   echo "Run tests (my own linters, validators and so on)"
   # Docker container already started
