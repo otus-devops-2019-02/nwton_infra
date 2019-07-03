@@ -15,6 +15,18 @@ sudo apt install ruby rubygems ruby-dev
 sudo gem install travis
 ```
 
+Дальше устанавливаем пакет, логинимся и добавляем шифрованную
+ссылку для доступа в чат
+``` text
+gem install travis
+travis login --com
+travis encrypt "devops-team-otus:<ваш_токен>#<имя_вашего_канала>" \
+       --add notifications.slack.rooms --com
+
+wget https://bit.ly/otus-travis-yaml-2019-02 -O .travis.yml
+wget http://bit.ly/otus-pr-template -O .github/PULL_REQUEST_TEMPLATE.md
+```
+
 
 # HW5. Знакомство с облачной инфраструктурой и облачными сервисами.
 
@@ -91,6 +103,23 @@ someinternalhost_IP = 10.132.0.3
 
 # HW6. Основные сервисы Google Cloud Platform (GCP).
 
+Установка GCP SDK
+- https://cloud.google.com/sdk/docs/
+``` text
+apt-get install apt-transport-https ca-certificates
+
+echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+sudo apt-get update && sudo apt-get install google-cloud-sdk
+
+gcloud init
+
+gcloud info
+gcloud auth list
+```
+
 Параметры для автоматической проверки HW через Travis CI
 ``` text
 testapp_IP = 34.77.57.229
@@ -134,6 +163,16 @@ $ gcloud compute firewall-rules create default-puma-server-auto \
 
 
 # HW7. Модели управления инфраструктурой.
+
+Для WSL нормально работает packer версии linux 64-bit
+- https://www.packer.io/downloads.html
+- https://releases.hashicorp.com/packer/1.4.1/packer_1.4.1_linux_amd64.zip
+- https://releases.hashicorp.com/packer/
+- https://releases.hashicorp.com/packer/1.2.4/packer_1.2.4_linux_amd64.zip
+Для совместимости с тестами ДЗ - использовал packer 1.2.4
+
+Установка ADC
+- `gcloud auth application-default login`
 
 Примечание: в JSON для packer нельзя в массивах заканчивать список элементов
 запятой, после последнего элемента запятая должна обязательно отсутствовать,
@@ -205,6 +244,14 @@ $ gcloud compute instances create reddit-app-pack-full \
 
 
 # HW8. Практика Infrastructure as a Code (IaC).
+
+Для WSL нормально работает terraform версии linux 64-bit
+- https://www.terraform.io/downloads.html
+- https://releases.hashicorp.com/terraform/0.12.3/terraform_0.12.3_linux_amd64.zip
+- https://releases.hashicorp.com/terraform/
+- https://releases.hashicorp.com/terraform/0.11.14/terraform_0.11.14_linux_amd64.zip
+- https://releases.hashicorp.com/terraform/0.11.11/terraform_0.11.11_linux_amd64.zip
+Для совместимости с тестами ДЗ - использовал terraform 0.11.11
 
 Примечание: в штатных образах Ubuntu уже установлен git,
 дополнительно устанавливать не нужно.
