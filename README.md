@@ -920,3 +920,222 @@ cd ../terraform/prod && terraform destroy
 
 
 # HW13. Локальная разработка Ansible ролей с Vagrant. Тестирование конфигурации.
+
+## Работа с vagrant
+``` bash
+vagrant init
+vagrant box list
+
+vagrant up
+vagrant status
+
+vagrant provision dbserver
+vagrant provision appserver
+
+vagrant ssh dbserver
+vagrant ssh appserver
+
+vagrant halt
+vagrant destroy
+
+vagrant destroy -f
+rm -rf .vagrant
+```
+
+Примечание: если есть две vm, но vm.provision указан только
+в одной, то при запуске с нуля через `vagrant up` будет
+создана только эта vm (актуально при полном перезапуске
+лабы в середине ДЗ).
+
+Примечание: vagrant сохраняет свой inventory в плоском файле,
+поэтому нужно включить соответствующий плагин в ansible.cfg
+
+Примечание: vagrant запускает ansible плейбуки от имени
+пользователя vagrant, а пользователь ubuntu хоть и создан
+в системе, но не используется для этого:
+- https://docs.ansible.com/ansible/latest/scenario_guides/guide_vagrant.html
+- https://www.vagrantup.com/docs/provisioning/ansible_intro.html
+- https://www.vagrantup.com/docs/provisioning/ansible_common.html
+- https://www.vagrantup.com/docs/provisioning/ansible.html
+
+Примечание: при изменении systemd юнит-файла обязательно
+запускать `systemctl daemon-reload`, иначе возможна ситуация
+что файл обновился, а сервис не может перезапуститься.
+При создании файла с нуля systemd отрабатывает нормально, хоть
+и ругается на это, но при изменении путей при смене deploy_user
+это является обязательным (или рестартовать VM целиком).
+
+
+## Дополнительное задание
+Проблема из-за того, что нет переменной, задающей параметры nginx,
+т.к. она у нас задаётся в файле переменных окружения.
+
+Берём содержимое файла environments/stage/group_vars/app и
+переделываем под язык ruby, следя за стрелочками и правильным
+применением квадратных и фигурных скобок. Из плюсов - в списках
+последний элемент можно оставлять с запятой в конце.
+
+Добавлять - обязательно в *ansible.extra_vars*
+
+
+## Работа с Vagrant под Windows
+Vagrant под Windows - имеет доступ к VirtualBox, но не может ansible
+Vagrant под WSL - не может использовать VirtualBox, но умеет ansible
+
+Документация:
+- https://www.vagrantup.com/docs/other/wsl.html
+- https://github.com/hashicorp/vagrant/issues/8604
+- https://github.com/joelhandwell/ubuntu_vagrant_boxes/issues/1
+- http://michaelkant.com/blog/wsl-and-you/
+- https://alchemist.digital/articles/vagrant-ansible-and-virtualbox-on-wsl-windows-subsystem-for-linux/
+- https://github.com/JeffReeves/WSL-Ansible-Vagrant-VirtualBox
+
+Устанавливаем обе версии одновременно:
+``` text
+C:> windows
+choco install virtualbox --version 5.2.30
+choco install vagrant --version 2.2.5
+
+$ WSL
+wget https://releases.hashicorp.com/vagrant/2.2.5/vagrant_2.2.5_x86_64.deb
+sudo dpkg -i vagrant_2.2.5_x86_64.deb
+
+export VAGRANT_WSL_ENABLE_WINDOWS_ACCESS="1"
+export PATH="$PATH:/mnt/c/Program Files/Oracle/VirtualBox"
+```
+
+И добавляем кусочек в Vagrantfile ("is not a bug")
+```
+config.vm.provider "virtualbox" do |vb|
+  vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+end
+```
+
+Альтернативный устаревший вариант для Windows без WSL
+с использованием плагина vagrant-guest_ansible и
+использованием ansible_local provisioner:
+- https://github.com/vovimayhem/vagrant-guest_ansible
+  `vagrant plugin install vagrant-guest_ansible`
+- https://gist.github.com/tknerr/291b765df23845e56a29
+- https://www.vagrantup.com/docs/provisioning/ansible_local.html
+- https://blog.zencoffee.org/2016/08/ansible-vagrant-windows/
+
+
+## Работа с virtualenv
+
+Установка зависимостей в virtualenv
+- https://docs.python-guide.org/dev/virtualenvs/
+``` bash
+sudo apt-get install python-virtualenv
+sudo pip install virtualenv
+sudo pip install pip-tools
+
+cd ansible
+
+virtualenv venv
+source venv/bin/activate
+
+pip-sync -n requirements.txt
+pip install -r requirements.txt
+
+pip freeze | less
+
+deactivate
+
+rm -rf venv
+```
+
+### Работа с molecule and testinfra
+
+Дополнительные настройки для molecule (для WSL и устанавливаем размер VM,
+но проблема с uartmode1 присутствует и для Linux инсталляций):
+- https://github.com/ansible/molecule/issues/424
+- https://github.com/ansible/molecule/issues/1556#issuecomment-441182444
+- https://github.com/jonashackt/molecule-ansible-docker-vagrant
+
+Дополнительные модули:
+https://testinfra.readthedocs.io/en/latest/modules.html
+
+Работаем в virtualenv в каталоге ansible (см.ранее)
+``` bash
+cd ansible
+source venv/bin/activate
+
+cd roles/db/
+molecule init scenario --scenario-name default -r db -d vagrant
+...
+molecule create
+molecule list
+molecule login -h instance
+molecule converge
+molecule verify
+
+deactivate
+```
+
+Примечание: molecule версии 2.20.1 использует зависимость на
+очень старую версию testinfra==1.19.0, которая несовместима
+с ansible версии 2.8
+- `pip install molecule==2.19 ansible==2.7.11`
+- https://github.com/ansible/molecule/issues/1727
+- https://github.com/ansible/molecule/issues/2083
+- https://github.com/ansible/molecule/pull/2034
+
+
+## Дополнительное задание с двумя звездочками
+- Вынести роль db в отдельный репозиторий: удалить роль из
+  репозитория infra и сделать подключение роли через
+  requirements.yml обоих окружений;
+- Подключить TravisCI для созданного репозитория с ролью db
+  для автоматического прогона тестов в GCE (нужно использовать
+  соответсвующий драйвер в molecule).
+- Пример, как это может выглядеть, можно посмотреть здесь
+  https://github.com/Artemmkin/db-role-example/
+  https://github.com/Artemmkin/test-ansible-role-with-travis
+- Примерные шаги по настройке TravisCI указаны в данном gist
+  https://gist.github.com/Artemmkin/e1c845e96589d5d71476f57ed931f1ac
+- У роли должен быть бейдж со статусом билда
+- Настроить оповещения о билде в slack, который использовали в предыдущих ДЗ;
+
+Прочее от Artemmkin:
+- https://github.com/Artemmkin/infrastructure-as-code-tutorial
+- https://github.com/Artemmkin/infrastructure-as-code-example
+
+
+## В процессе сделано:
+- Создано локальное тестовое окружение из двух VM в virtualbox
+  с использованием vagrant
+- Конфиг ansible.cfg исправлен для работы и под vagrant
+- Добавлен bootstrap плейбук для установки python, если его нет
+- В роле db созданы таски для установки и конфига mongo
+- В роле app созданы таски для установки и конфига ruby и puma
+- Добавлена параметризация deploy_user для указания под
+  каким пользователем выкатить приложение и установлено
+  правильное значение
+- Развернуты требуемые версии пакетов для прохождения тестов
+  с использованием molecula и testinfra в virtualenv
+- Добавлены тесты MongoDB на наличие файлов и запущенного
+  сервиса и того, что порт 27017 прослушивается
+- Переделаны плейбуки для packer на использование ролей
+  и передачу тэгов (только для app передаём тэг ruby)
+
+## Дополнительное задание
+- Добавлена переменная окружения для правильного деплоя
+  модуля nginx и запуска проксирования 80 порта
+
+## Как запустить проект:
+
+Запуск приложения в виртуальной среде на локальном компе
+и последующее удаление хвостов:
+``` bash
+cd ansible
+vagrant up
+...
+vagrant destroy -f
+rm -rf .vagrant
+```
+
+## Как проверить работоспособность:
+- Перейти по ссылке http://10.10.10.20/
+
+[![Build Status](https://travis-ci.com/otus-devops-2019-02/nwton_infra.svg?branch=ansible-4)](https://travis-ci.com/otus-devops-2019-02/nwton_infra)
